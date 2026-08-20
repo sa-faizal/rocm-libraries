@@ -121,6 +121,18 @@ TEST(rocrand_config_dispatch_tests, parse_common_architectures)
     ASSERT_EQ(parse_gcn_arch("gfx906:::"), target_arch::gfx906);
     ASSERT_EQ(parse_gcn_arch("gfx908:"), target_arch::gfx908);
     ASSERT_EQ(parse_gcn_arch("gfx90a:sramecc+:xnack-"), target_arch::gfx90a);
+
+    // Family members and generic code-object names use the same
+    // representative tuning target on host and device.
+    ASSERT_EQ(parse_gcn_arch("gfx1030"), target_arch::gfx1030);
+    ASSERT_EQ(parse_gcn_arch("gfx1031:sramecc-"), target_arch::gfx1030);
+    ASSERT_EQ(parse_gcn_arch("gfx1036"), target_arch::gfx1030);
+    ASSERT_EQ(parse_gcn_arch("gfx10-3-generic"), target_arch::gfx1030);
+    ASSERT_EQ(parse_gcn_arch("gfx1200"), target_arch::gfx1201);
+    ASSERT_EQ(parse_gcn_arch("gfx1201:xnack-"), target_arch::gfx1201);
+    ASSERT_EQ(parse_gcn_arch("gfx12-generic"), target_arch::gfx1201);
+    ASSERT_EQ(parse_gcn_arch("gfx1037"), target_arch::unknown);
+    ASSERT_EQ(parse_gcn_arch("gfx1202"), target_arch::unknown);
 }
 
 TEST(rocrand_config_dispatch_tests, get_config_on_host_and_device)

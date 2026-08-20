@@ -28,6 +28,7 @@
 #include "rtc_subprocess.h"
 #include "sqlite3.h"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <hip/hip_runtime_api.h>
@@ -49,6 +50,32 @@ const bool RTCCache::db_file::cache_write_disabled
 
 static const char* default_cache_filename_prefix = "rocfft_kernel_cache_";
 static const char* default_cache_filename_suffix = ".db";
+
+std::vector<std::string> rtc_cache_arch_candidates(const std::string& gpu_arch)
+{
+    std::vector<std::string> candidates{gpu_arch};
+
+    // Runtime devices report exact architecture names, while an installed
+    // AOT cache may have been built once for the compatible generic family.
+    if(gpu_arch == "gfx1030" || gpu_arch == "gfx1031" || gpu_arch == "gfx1032"
+       || gpu_arch == "gfx1033" || gpu_arch == "gfx1034" || gpu_arch == "gfx1035"
+       || gpu_arch == "gfx1036")
+    {
+        candidates.emplace_back("gfx10-3-generic");
+    }
+    else if(gpu_arch == "gfx1200" || gpu_arch == "gfx1201")
+    {
+        candidates.emplace_back("gfx12-generic");
+    }
+    return candidates;
+}
+
+bool rtc_cache_arch_matches_solution(const std::string& cache_arch,
+                                     const std::string& solution_arch)
+{
+    const auto candidates = rtc_cache_arch_candidates(solution_arch);
+    return std::find(candidates.begin(), candidates.end(), cache_arch) != candidates.end();
+}
 
 // Lock for in-process compilation - due to limits in ROCclr, we
 // can do at most one compilation in a process before we have to
@@ -302,15 +329,19 @@ RTCCache::RTCCache()
 {
     for(const auto& arch : get_visible_gpu_arches())
     {
-        auto sys_paths = rtccache_db_sys_paths(arch);
-        // create an entry in the map for this arch
-        auto iter = db_sys.try_emplace(arch).first;
-        // try connecting to the available paths until one succeeds
-        for(const auto& p : sys_paths)
+        for(const auto& cache_arch : rtc_cache_arch_candidates(arch))
         {
-            iter->second.connect_db(p, true);
-            if(iter->second.is_connected())
-                break;
+            auto [iter, inserted] = db_sys.try_emplace(cache_arch);
+            if(!inserted)
+                continue;
+
+            // Try connecting to the available paths until one succeeds.
+            for(const auto& p : rtccache_db_sys_paths(cache_arch))
+            {
+                iter->second.connect_db(p, true);
+                if(iter->second.is_connected())
+                    break;
+            }
         }
     }
 
@@ -364,15 +395,26 @@ std::vector<char> RTCCache::get_code_object(const std::string&          kernel_n
                                             const std::array<char, 32>& generator_sum)
 {
     std::vector<char> code;
-    // try user cache first
+    const auto        candidates = rtc_cache_arch_candidates(gpu_arch);
+
+    // Preserve user-cache priority, but prefer an exact row over a generic
+    // family row within each cache tier.
     if(db_user.is_connected())
-        code = db_user.get_code_object(kernel_name, gpu_arch, generator_sum);
-    // fall back to system cache
-    if(code.empty())
     {
-        auto sys = db_sys.find(gpu_arch);
+        for(const auto& cache_arch : candidates)
+        {
+            code = db_user.get_code_object(kernel_name, cache_arch, generator_sum);
+            if(!code.empty())
+                break;
+        }
+    }
+    // Fall back to exact and then generic-family system caches.
+    for(auto candidate = candidates.begin(); code.empty() && candidate != candidates.end();
+        ++candidate)
+    {
+        auto sys = db_sys.find(*candidate);
         if(sys != db_sys.end() && sys->second.is_connected())
-            code = sys->second.get_code_object(kernel_name, gpu_arch, generator_sum);
+            code = sys->second.get_code_object(kernel_name, *candidate, generator_sum);
     }
     return code;
 }

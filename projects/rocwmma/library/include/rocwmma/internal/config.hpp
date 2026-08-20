@@ -44,6 +44,7 @@
 /// ROCWMMA_ARCH_GFX1153
 /// ROCWMMA_ARCH_GFX1200
 /// ROCWMMA_ARCH_GFX1201
+/// ROCWMMA_ARCH_GFX12_GENERIC
 /// ROCWMMA_ARCH_GFX1250
 ///
 /// IMPORTANT: __gfx908__ and similar macros are exclusively defined during the device
@@ -83,6 +84,8 @@
 #define ROCWMMA_ARCH_GFX1200 __gfx1200__
 #elif defined(__gfx1201__) && ROCWMMA_DEVICE_COMPILE
 #define ROCWMMA_ARCH_GFX1201 __gfx1201__
+#elif defined(__gfx12_generic__) && ROCWMMA_DEVICE_COMPILE
+#define ROCWMMA_ARCH_GFX12_GENERIC __gfx12_generic__
 #elif defined(__gfx1250__) && ROCWMMA_DEVICE_COMPILE
 #define ROCWMMA_ARCH_GFX1250 __gfx1250__
 #elif !ROCWMMA_DEVICE_COMPILE
@@ -133,6 +136,9 @@ static_assert(0, "Unsupported architecture");
 #if !defined(ROCWMMA_ARCH_GFX1201)
 #define ROCWMMA_ARCH_GFX1201 0
 #endif
+#if !defined(ROCWMMA_ARCH_GFX12_GENERIC)
+#define ROCWMMA_ARCH_GFX12_GENERIC 0
+#endif
 #if !defined(ROCWMMA_ARCH_GFX1250)
 #define ROCWMMA_ARCH_GFX1250 0
 #endif
@@ -164,7 +170,8 @@ static_assert(0, "Unsupported architecture");
 #define ROCWMMA_BLOCK_DIM_16_SUPPORTED 1
 #endif
 
-#if ROCWMMA_ARCH_GFX1200 || ROCWMMA_ARCH_GFX1201 || ROCWMMA_ARCH_GFX1250
+#if ROCWMMA_ARCH_GFX1200 || ROCWMMA_ARCH_GFX1201 || ROCWMMA_ARCH_GFX12_GENERIC \
+    || ROCWMMA_ARCH_GFX1250
 #define ROCWMMA_ARCH_GFX12 1
 #define ROCWMMA_WAVE32_MODE 1
 #define ROCWMMA_BLOCK_DIM_16_SUPPORTED 1

@@ -62,6 +62,7 @@ namespace rocwmma
                                             TargetId,
                                             Constants::AMDGCN_ARCH_ID_GFX1200,
                                             Constants::AMDGCN_ARCH_ID_GFX1201,
+                                            Constants::AMDGCN_ARCH_ID_GFX12_GENERIC,
                                             Constants::AMDGCN_ARCH_ID_GFX1250> && Cond>;
 
         // Enabler for all of gfx11 and gfx12
@@ -79,6 +80,7 @@ namespace rocwmma
                                             Constants::AMDGCN_ARCH_ID_GFX1153,
                                             Constants::AMDGCN_ARCH_ID_GFX1200,
                                             Constants::AMDGCN_ARCH_ID_GFX1201,
+                                            Constants::AMDGCN_ARCH_ID_GFX12_GENERIC,
                                             Constants::AMDGCN_ARCH_ID_GFX1250> && Cond>;
 
         /*! \class amdgcn_wmma
@@ -706,7 +708,8 @@ namespace rocwmma
                            GfxTargetId,
                            enable_target_id_t<GfxTargetId,
                                               Constants::AMDGCN_ARCH_ID_GFX1200,
-                                              Constants::AMDGCN_ARCH_ID_GFX1201>>
+                                              Constants::AMDGCN_ARCH_ID_GFX1201,
+                                              Constants::AMDGCN_ARCH_ID_GFX12_GENERIC>>
         {
             constexpr static WmmaCtrlFlags InputSign = WmmaCtrlFlags::SIGNED;
             constexpr static WmmaCtrlFlags AccumBits = WmmaCtrlFlags::LOW;
@@ -879,7 +882,8 @@ namespace rocwmma
                            GfxTargetId,
                            enable_target_id_t<GfxTargetId,
                                               Constants::AMDGCN_ARCH_ID_GFX1200,
-                                              Constants::AMDGCN_ARCH_ID_GFX1201>>
+                                              Constants::AMDGCN_ARCH_ID_GFX1201,
+                                              Constants::AMDGCN_ARCH_ID_GFX12_GENERIC>>
         {
             constexpr static WmmaCtrlFlags InputSign = WmmaCtrlFlags::SIGNED;
             constexpr static WmmaCtrlFlags AccumBits = WmmaCtrlFlags::LOW;
@@ -1059,7 +1063,8 @@ namespace rocwmma
                            GfxTargetId,
                            enable_target_id_t<GfxTargetId,
                                               Constants::AMDGCN_ARCH_ID_GFX1200,
-                                              Constants::AMDGCN_ARCH_ID_GFX1201>>
+                                              Constants::AMDGCN_ARCH_ID_GFX1201,
+                                              Constants::AMDGCN_ARCH_ID_GFX12_GENERIC>>
         {
             constexpr static WmmaCtrlFlags InputSign = WmmaCtrlFlags::SIGNED;
             constexpr static WmmaCtrlFlags AccumBits = WmmaCtrlFlags::LOW;
@@ -1232,7 +1237,8 @@ namespace rocwmma
                            GfxTargetId,
                            enable_target_id_t<GfxTargetId,
                                               Constants::AMDGCN_ARCH_ID_GFX1200,
-                                              Constants::AMDGCN_ARCH_ID_GFX1201>>
+                                              Constants::AMDGCN_ARCH_ID_GFX1201,
+                                              Constants::AMDGCN_ARCH_ID_GFX12_GENERIC>>
         {
             constexpr static WmmaCtrlFlags InputSign = WmmaCtrlFlags::SIGNED;
             constexpr static WmmaCtrlFlags AccumBits = WmmaCtrlFlags::LOW;
@@ -1456,7 +1462,8 @@ namespace rocwmma
                            GfxTargetId,
                            enable_target_id_t<GfxTargetId,
                                               Constants::AMDGCN_ARCH_ID_GFX1200,
-                                              Constants::AMDGCN_ARCH_ID_GFX1201>>
+                                              Constants::AMDGCN_ARCH_ID_GFX1201,
+                                              Constants::AMDGCN_ARCH_ID_GFX12_GENERIC>>
         {
             constexpr static WmmaCtrlFlags InputSign = WmmaCtrlFlags::SIGNED;
             constexpr static WmmaCtrlFlags AccumBits = WmmaCtrlFlags::LOW;
@@ -1621,7 +1628,8 @@ namespace rocwmma
                            GfxTargetId,
                            enable_target_id_t<GfxTargetId,
                                               Constants::AMDGCN_ARCH_ID_GFX1200,
-                                              Constants::AMDGCN_ARCH_ID_GFX1201>>
+                                              Constants::AMDGCN_ARCH_ID_GFX1201,
+                                              Constants::AMDGCN_ARCH_ID_GFX12_GENERIC>>
         {
             constexpr static WmmaCtrlFlags InputSign = WmmaCtrlFlags::UNSIGNED;
             constexpr static WmmaCtrlFlags AccumBits = WmmaCtrlFlags::LOW;
@@ -1794,7 +1802,8 @@ namespace rocwmma
                            GfxTargetId,
                            enable_target_id_t<GfxTargetId,
                                               Constants::AMDGCN_ARCH_ID_GFX1200,
-                                              Constants::AMDGCN_ARCH_ID_GFX1201>>
+                                              Constants::AMDGCN_ARCH_ID_GFX1201,
+                                              Constants::AMDGCN_ARCH_ID_GFX12_GENERIC>>
         {
             constexpr static WmmaCtrlFlags InputSign = WmmaCtrlFlags::SIGNED;
             constexpr static WmmaCtrlFlags AccumBits = WmmaCtrlFlags::LOW;
@@ -2166,7 +2175,8 @@ namespace rocwmma
                            GfxTargetId,
                            enable_target_id_t<GfxTargetId,
                                               Constants::AMDGCN_ARCH_ID_GFX1200,
-                                              Constants::AMDGCN_ARCH_ID_GFX1201>>
+                                              Constants::AMDGCN_ARCH_ID_GFX1201,
+                                              Constants::AMDGCN_ARCH_ID_GFX12_GENERIC>>
         {
             constexpr static WmmaCtrlFlags InputSign = WmmaCtrlFlags::SIGNED;
             constexpr static WmmaCtrlFlags AccumBits = WmmaCtrlFlags::LOW;
@@ -2509,7 +2519,8 @@ namespace rocwmma
                            GfxTargetId,
                            enable_target_id_t<GfxTargetId,
                                               Constants::AMDGCN_ARCH_ID_GFX1200,
-                                              Constants::AMDGCN_ARCH_ID_GFX1201>>
+                                              Constants::AMDGCN_ARCH_ID_GFX1201,
+                                              Constants::AMDGCN_ARCH_ID_GFX12_GENERIC>>
         {
             constexpr static WmmaCtrlFlags InputSign = WmmaCtrlFlags::SIGNED;
             constexpr static WmmaCtrlFlags AccumBits = WmmaCtrlFlags::LOW;
@@ -2851,7 +2862,8 @@ namespace rocwmma
                            GfxTargetId,
                            enable_target_id_t<GfxTargetId,
                                               Constants::AMDGCN_ARCH_ID_GFX1200,
-                                              Constants::AMDGCN_ARCH_ID_GFX1201>>
+                                              Constants::AMDGCN_ARCH_ID_GFX1201,
+                                              Constants::AMDGCN_ARCH_ID_GFX12_GENERIC>>
         {
             constexpr static WmmaCtrlFlags InputSign = WmmaCtrlFlags::SIGNED;
             constexpr static WmmaCtrlFlags AccumBits = WmmaCtrlFlags::LOW;

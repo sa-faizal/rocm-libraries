@@ -45,6 +45,52 @@ extern "C" __global__ void simple_kernel(int* input)
 }
 )";
 
+TEST(rocfft_internal, rtc_cache_arch_candidates_exact_first)
+{
+    EXPECT_EQ(rtc_cache_arch_candidates("gfx1030"),
+              (std::vector<std::string>{"gfx1030", "gfx10-3-generic"}));
+    EXPECT_EQ(rtc_cache_arch_candidates("gfx1036"),
+              (std::vector<std::string>{"gfx1036", "gfx10-3-generic"}));
+    EXPECT_EQ(rtc_cache_arch_candidates("gfx1200"),
+              (std::vector<std::string>{"gfx1200", "gfx12-generic"}));
+    EXPECT_EQ(rtc_cache_arch_candidates("gfx1201"),
+              (std::vector<std::string>{"gfx1201", "gfx12-generic"}));
+
+    // Already-generic and unrelated architectures are not expanded.
+    EXPECT_EQ(rtc_cache_arch_candidates("gfx10-3-generic"),
+              (std::vector<std::string>{"gfx10-3-generic"}));
+    EXPECT_EQ(rtc_cache_arch_candidates("gfx12-generic"),
+              (std::vector<std::string>{"gfx12-generic"}));
+    EXPECT_EQ(rtc_cache_arch_candidates("gfx1100"),
+              (std::vector<std::string>{"gfx1100"}));
+    EXPECT_EQ(rtc_cache_arch_candidates("gfx1037"),
+              (std::vector<std::string>{"gfx1037"}));
+    EXPECT_EQ(rtc_cache_arch_candidates("gfx1202"),
+              (std::vector<std::string>{"gfx1202"}));
+
+    // A generic AOT build includes tuned kernels for every family member.
+    EXPECT_TRUE(rtc_cache_arch_matches_solution("gfx10-3-generic", "gfx1030"));
+    EXPECT_TRUE(rtc_cache_arch_matches_solution("gfx10-3-generic", "gfx1036"));
+    EXPECT_TRUE(rtc_cache_arch_matches_solution("gfx12-generic", "gfx1200"));
+    EXPECT_TRUE(rtc_cache_arch_matches_solution("gfx12-generic", "gfx1201"));
+    EXPECT_FALSE(rtc_cache_arch_matches_solution("gfx12-generic", "gfx1100"));
+}
+
+TEST(rocfft_internal, rtc_cache_generic_db_key_fallback)
+{
+    const std::array<char, 32> generator_sum{};
+    const std::vector<char>    generic_code{'g'};
+    const std::vector<char>    exact_code{'e'};
+
+    RTCCache cache;
+    cache.store_code_object("generic-fallback", "gfx12-generic", generator_sum, generic_code);
+    EXPECT_EQ(cache.get_code_object("generic-fallback", "gfx1200", generator_sum),
+              generic_code);
+
+    cache.store_code_object("generic-fallback", "gfx1200", generator_sum, exact_code);
+    EXPECT_EQ(cache.get_code_object("generic-fallback", "gfx1200", generator_sum), exact_code);
+}
+
 // make sure RTC gracefully handles a helper process that crashes
 TEST(rocfft_internal, rtc_helper_crash)
 {

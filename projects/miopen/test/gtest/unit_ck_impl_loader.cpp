@@ -19,6 +19,7 @@
 #endif
 
 using miopen::solver::CKSolverType;
+using miopen::solver::GetCkImplLibraryArchCandidates;
 using miopen::solver::GetCurrentDeviceName;
 using miopen::solver::IsDeterministicSplitKValid;
 
@@ -177,6 +178,24 @@ TEST(GPU_CkImplLoader_FP16, LoaderStripsDeviceSuffix)
 #endif // MIOPEN_BACKEND_HIP
 
 // -- CPU tests (no GPU required) ----------------------------------------------
+
+TEST(CPU_CkImplLoader_NONE, LibraryArchCandidatesUseGfx12GenericFallback)
+{
+    EXPECT_EQ(GetCkImplLibraryArchCandidates("gfx1200"),
+              (std::vector<std::string>{"gfx1200", "gfx12-generic"}));
+    EXPECT_EQ(GetCkImplLibraryArchCandidates("gfx1201:sramecc+:xnack-"),
+              (std::vector<std::string>{"gfx1201", "gfx12-generic"}));
+    EXPECT_EQ(GetCkImplLibraryArchCandidates("gfx12-generic"),
+              (std::vector<std::string>{"gfx12-generic"}));
+}
+
+TEST(CPU_CkImplLoader_NONE, LibraryArchCandidatesDoNotCollapseUnsupportedFamilies)
+{
+    EXPECT_EQ(GetCkImplLibraryArchCandidates("gfx1030"),
+              (std::vector<std::string>{"gfx1030"}));
+    EXPECT_EQ(GetCkImplLibraryArchCandidates("gfx1250"),
+              (std::vector<std::string>{"gfx1250"}));
+}
 
 TEST(CPU_CkImplLoader_NONE, LoaderFailsGracefullyForUnknownDevice)
 {

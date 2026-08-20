@@ -110,7 +110,13 @@ constexpr target_arch get_device_arch()
     return target_arch::gfx90a;
 #elif defined(__gfx942__)
     return target_arch::gfx942;
-#elif defined(__gfx1030__)
+// Generic family code objects must use the same representative architecture as
+// the host-side runtime mapping below.  Otherwise, the dispatch trampoline can
+// select an exact specialization that is compiled out of the generic code
+// object, turning a successful launch into a silent no-op.
+#elif defined(__gfx1030__) || defined(__gfx1031__) || defined(__gfx1032__) \
+    || defined(__gfx1033__) || defined(__gfx1034__) || defined(__gfx1035__) \
+    || defined(__gfx1036__) || defined(__gfx10_3_generic__)
     return target_arch::gfx1030;
 #elif defined(__gfx1100__)
     return target_arch::gfx1100;
@@ -120,7 +126,7 @@ constexpr target_arch get_device_arch()
     return target_arch::gfx1102;
 #elif defined(__gfx1150__)
     return target_arch::gfx1150;
-#elif defined(__gfx1201__)
+#elif defined(__gfx1200__) || defined(__gfx1201__) || defined(__gfx12_generic__)
     return target_arch::gfx1201;
 #else
     return target_arch::unknown;
@@ -132,6 +138,23 @@ constexpr target_arch get_device_arch()
 /// @return The detected element of the enum, of \ref target_arch::unknown, if not found.
 inline target_arch parse_gcn_arch(const std::string& arch_name)
 {
+    // rocRAND's configuration database uses one representative target for
+    // each of these processor families.  Normalize every runtime member to
+    // that representative so exact devices and generic family code objects
+    // make the same dispatch decision and use the existing, safe tuning.
+    if(arch_name.find("gfx1030") == 0 || arch_name.find("gfx1031") == 0
+       || arch_name.find("gfx1032") == 0 || arch_name.find("gfx1033") == 0
+       || arch_name.find("gfx1034") == 0 || arch_name.find("gfx1035") == 0
+       || arch_name.find("gfx1036") == 0 || arch_name.find("gfx10-3-generic") == 0)
+    {
+        return target_arch::gfx1030;
+    }
+    if(arch_name.find("gfx1200") == 0 || arch_name.find("gfx1201") == 0
+       || arch_name.find("gfx12-generic") == 0)
+    {
+        return target_arch::gfx1201;
+    }
+
     const std::string target_names[]         = {"gfx900",
                                                 "gfx902",
                                                 "gfx904",

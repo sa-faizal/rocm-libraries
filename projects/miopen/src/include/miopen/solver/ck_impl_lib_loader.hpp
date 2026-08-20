@@ -47,6 +47,12 @@ enum class CKSolverType
     Count                = 12
 };
 
+/// Return CK plugin architecture names in lookup order for a runtime device.
+/// Exact gfx120x plugins take precedence, with the gfx12 generic plugin used
+/// as a family-compatible fallback when an exact plugin is not installed.
+MIOPEN_INTERNALS_EXPORT std::vector<std::string>
+GetCkImplLibraryArchCandidates(const std::string& device_name);
+
 /// Query the HIP runtime for the current device's architecture name.
 /// Returns an empty string on failure or when not using the HIP backend.
 inline std::string GetCurrentDeviceName()

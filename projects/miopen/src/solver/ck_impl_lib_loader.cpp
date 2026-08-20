@@ -40,11 +40,11 @@ std::string StripDeviceSuffix(const std::string& device_name)
     return device_name;
 }
 
-/// Build the expected shared library filename for a given device.
-std::string MakeLibraryFilename(const std::string& device_name)
+/// Build the expected shared library filename for a given architecture.
+std::string MakeLibraryFilename(const std::string& arch)
 {
     return std::string(miopen::library_prefix) + "MIOpenCKGroupedConv_" +
-           StripDeviceSuffix(device_name) + std::string(miopen::dynamic_library_postfix);
+           arch + std::string(miopen::dynamic_library_postfix);
 }
 
 /// Resolve the directory containing the loaded MIOpen shared library.
@@ -162,6 +162,19 @@ miopenStatus_t toMiopenStatus(ck_impl_status_t status)
 
 } // namespace
 
+std::vector<std::string> GetCkImplLibraryArchCandidates(const std::string& device_name)
+{
+    const auto exact_arch = StripDeviceSuffix(device_name);
+    std::vector<std::string> candidates{exact_arch};
+
+    // gfx12-generic currently covers the gfx120x family. gfx1250 has distinct
+    // ISA requirements and therefore must continue using its exact plugin.
+    if(exact_arch == "gfx1200" || exact_arch == "gfx1201")
+        candidates.emplace_back("gfx12-generic");
+
+    return candidates;
+}
+
 // -- Singleton infrastructure -------------------------------------------------
 
 std::mutex& CkImplLibLoader::CacheMutex()
@@ -208,74 +221,72 @@ CkImplLibLoader::~CkImplLibLoader()
 
 void CkImplLibLoader::OpenRuntimeLibraryForDevice(const std::string& device_name)
 {
-    const miopen::fs::path filename{MakeLibraryFilename(device_name)};
-
-    // 1. Try MIOPEN_CK_LIB_PATH environment variable
     const auto env_path = env::value(MIOPEN_CK_LIB_PATH);
-    if(!env_path.empty())
-    {
-        const auto full_path = miopen::fs::path{env_path} / filename;
-        lib_handle_          = OpenDynamicLibrary(full_path);
-        if(lib_handle_ != nullptr)
-        {
-            MIOPEN_LOG_I2("Loaded CK grouped conv library from env path: " << full_path.string());
-        }
-    }
+    const auto lib_dir    = GetOwningModuleDirectory();
+    const auto candidates = GetCkImplLibraryArchCandidates(device_name);
 
-    // 2. Try the directory containing the MIOpen shared library
-    if(lib_handle_ == nullptr)
+    for(const auto& arch : candidates)
     {
-        const auto lib_dir = GetOwningModuleDirectory();
-        if(!lib_dir.empty())
+        const miopen::fs::path filename{MakeLibraryFilename(arch)};
+
+        // 1. Try MIOPEN_CK_LIB_PATH environment variable.
+        if(!env_path.empty())
+        {
+            const auto full_path = miopen::fs::path{env_path} / filename;
+            lib_handle_          = OpenDynamicLibrary(full_path);
+            if(lib_handle_ != nullptr)
+                MIOPEN_LOG_I2("Loaded CK grouped conv library from env path: "
+                              << full_path.string());
+        }
+
+        // 2. Try the directory containing the MIOpen shared library.
+        if(lib_handle_ == nullptr && !lib_dir.empty())
         {
             const auto full_path = lib_dir / filename;
             lib_handle_          = OpenDynamicLibrary(full_path);
             if(lib_handle_ != nullptr)
-            {
-                MIOPEN_LOG_I2(
-                    "Loaded CK grouped conv library from lib dir: " << full_path.string());
-            }
+                MIOPEN_LOG_I2("Loaded CK grouped conv library from lib dir: "
+                              << full_path.string());
         }
-    }
 
-    // 3. Fall back to default search path
-    if(lib_handle_ == nullptr)
-    {
-        lib_handle_ = OpenDynamicLibrary(filename);
-        if(lib_handle_ != nullptr)
+        // 3. Fall back to the default search path.
+        if(lib_handle_ == nullptr)
         {
-            MIOPEN_LOG_I2(
-                "Loaded CK grouped conv library from default path: " << filename.string());
+            lib_handle_ = OpenDynamicLibrary(filename);
+            if(lib_handle_ != nullptr)
+                MIOPEN_LOG_I2("Loaded CK grouped conv library from default path: "
+                              << filename.string());
         }
-    }
 
-    if(lib_handle_ == nullptr)
-    {
-        MIOPEN_LOG_W("CK grouped conv library not found for device "
-                     << StripDeviceSuffix(device_name) << ": " << GetDynamicLoadError());
+        if(lib_handle_ == nullptr)
+            continue;
+
+        if(!LoadSymbols())
+        {
+            MIOPEN_LOG_W("Failed to resolve symbols in CK grouped conv library for arch " << arch);
+            CloseDynamicLibrary(lib_handle_);
+            lib_handle_ = nullptr;
+            continue;
+        }
+
+        const int lib_version = get_api_version_fn_();
+        if(lib_version != CK_IMPL_API_VERSION)
+        {
+            MIOPEN_LOG_W("CK grouped conv API version mismatch for arch "
+                         << arch << ": expected " << CK_IMPL_API_VERSION << ", got "
+                         << lib_version);
+            CloseDynamicLibrary(lib_handle_);
+            lib_handle_ = nullptr;
+            continue;
+        }
+
+        loaded_ = true;
         return;
     }
 
-    if(!LoadSymbols())
-    {
-        MIOPEN_LOG_W("Failed to resolve symbols in CK grouped conv library for device "
-                     << StripDeviceSuffix(device_name));
-        loaded_ = false;
-        return;
-    }
-
-    // API version check
-    const int lib_version = get_api_version_fn_();
-    if(lib_version != CK_IMPL_API_VERSION)
-    {
-        MIOPEN_LOG_W("CK grouped conv API version mismatch for device "
-                     << StripDeviceSuffix(device_name) << ": expected " << CK_IMPL_API_VERSION
-                     << ", got " << lib_version);
-        loaded_ = false;
-        return;
-    }
-
-    loaded_ = true;
+    MIOPEN_LOG_W("CK grouped conv library not found for device "
+                 << StripDeviceSuffix(device_name) << " (tried " << candidates.size()
+                 << " architecture candidate(s)): " << GetDynamicLoadError());
 }
 
 // -- Symbol resolution --------------------------------------------------------

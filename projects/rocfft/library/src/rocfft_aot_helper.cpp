@@ -802,7 +802,7 @@ int main(int argc, char** argv)
                                                  generator_sum(),
                                                  rtc_helper);
                     }
-                    else if(gpu_arch.find(item.sol_arch_name) != std::string::npos)
+                    else if(rtc_cache_arch_matches_solution(gpu_arch, item.sol_arch_name))
                     {
                         // std::cout << "arch: " << gpu_arch
                         //           << ", solution-kernel: " << item.kernel_name << std::endl;

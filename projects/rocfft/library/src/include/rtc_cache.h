@@ -63,6 +63,12 @@ struct sqlite3_stmt_deleter
 typedef std::unique_ptr<sqlite3, sqlite3_deleter>           sqlite3_ptr;
 typedef std::unique_ptr<sqlite3_stmt, sqlite3_stmt_deleter> sqlite3_stmt_ptr;
 
+// Return RTC cache architecture keys in lookup order.  Exact targets come
+// first, followed by a compatible generic-family target when one exists.
+std::vector<std::string> rtc_cache_arch_candidates(const std::string& gpu_arch);
+bool rtc_cache_arch_matches_solution(const std::string& cache_arch,
+                                     const std::string& solution_arch);
+
 struct RTCCache
 {
     // Get compiled code object for a kernel.  Checks the cache to

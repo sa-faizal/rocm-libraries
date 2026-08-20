@@ -49,6 +49,7 @@ namespace rocwmma
         static constexpr uint32_t AMDGCN_ARCH_ID_GFX1153 = 0x1153;
         static constexpr uint32_t AMDGCN_ARCH_ID_GFX1200 = 0x1200;
         static constexpr uint32_t AMDGCN_ARCH_ID_GFX1201 = 0x1201;
+        static constexpr uint32_t AMDGCN_ARCH_ID_GFX12_GENERIC = 0x12FF;
         static constexpr uint32_t AMDGCN_ARCH_ID_GFX1250 = 0x1250;
         static constexpr uint32_t AMDGCN_ARCH_ID_NONE    = 0x0000;
 
@@ -90,6 +91,8 @@ namespace rocwmma
         static constexpr uint32_t AMDGCN_CURRENT_ARCH_ID = AMDGCN_ARCH_ID_GFX1200;
 #elif ROCWMMA_ARCH_GFX1201
         static constexpr uint32_t AMDGCN_CURRENT_ARCH_ID = AMDGCN_ARCH_ID_GFX1201;
+#elif ROCWMMA_ARCH_GFX12_GENERIC
+        static constexpr uint32_t AMDGCN_CURRENT_ARCH_ID = AMDGCN_ARCH_ID_GFX12_GENERIC;
 #elif ROCWMMA_ARCH_GFX1250
         static constexpr uint32_t AMDGCN_CURRENT_ARCH_ID = AMDGCN_ARCH_ID_GFX1250;
 #else
