@@ -95,15 +95,11 @@ template <typename THandle>
 class BenchmarkPlan : public IPlan<THandle>
 {
 public:
-    /// One sub-plan plus the kernel it was built for. The ids ride alongside because
-    /// IPlan has no kernel accessor and must not grow one: kernelId is what the selection
-    /// log names, and packId/dispatchId are the staleness cross-check a cached ranking is
-    /// validated against on a later run.
-    ///
-    /// The two staleness ids default and sit after `plan` so a caller that does not cache
-    /// -- every existing SDK fixture -- constructs a Candidate exactly as before. A
+    /// One sub-plan plus the kernel it was built for. The ids ride alongside because IPlan
+    /// has no kernel accessor and must not grow one: kernelId names the selection log
+    /// entry, packId/dispatchId are what a cached ranking is validated against. A
     /// default-constructed packId never matches a real one, so an uncached candidate
-    /// simply never resolves against a record, which is the correct outcome.
+    /// never resolves against a record.
     struct Candidate
     {
         DescriptorId kernelId;
@@ -113,10 +109,7 @@ public:
     };
 
     /// Invoked once, with every usable candidate in benchmarked order, after sampling
-    /// resolves the winner. An **absent callback means no caching** -- the flag-off path,
-    /// the SDK fixtures, and any provider that does not want a cache simply pass nothing,
-    /// so this stays a plain std::function rather than a cache reference. BenchmarkPlan
-    /// deliberately knows nothing about the cache's type or lifetime.
+    /// resolves the winner. An absent callback means no caching.
     using RecordRankingFn = std::function<void(std::vector<RankedEntry>)>;
 
     /// @param handle Used once, here, to size every sub-plan's workspace requirement;
@@ -186,9 +179,8 @@ private:
             return *_chosen;
         }
 
-        // Every usable candidate's time is retained, not just the running minimum: the
-        // winner cache stores the whole ranking so a later run whose knob filter excludes
-        // the winner can still serve the best surviving candidate.
+        // Every usable candidate's time is retained, not just the running minimum, so a
+        // later run whose knob filter excludes the winner can still serve the runner-up.
         std::vector<std::pair<double, size_t>> ranked;
         ranked.reserve(_candidates.size());
 
@@ -198,18 +190,16 @@ private:
                 = sampleCandidate(index, handle, deviceBuffers, numDeviceBuffers, workspace);
             if(!timeMs.has_value())
             {
-                // Omitted from the ranking, never appended with a sentinel time: a
-                // candidate that threw or failed to time is known-broken, and recording
-                // it as a low-ranked fallback would let it be served ahead of the normal
-                // ranked path on a later run.
+                // Omitted, never appended with a sentinel time: a candidate that failed to
+                // time must never be served ahead of the normal ranked path.
                 continue;
             }
             ranked.emplace_back(*timeMs, index);
         }
 
         // stable_sort, not sort: ties must resolve to the lowest candidate index. A plain
-        // std::sort would reorder equal times arbitrarily and silently change which
-        // kernel wins -- and micro-kernels at a few microseconds do tie.
+        // std::sort would reorder equal times arbitrarily and silently change which kernel
+        // wins.
         std::stable_sort(ranked.begin(), ranked.end(), [](const auto& lhs, const auto& rhs) {
             return lhs.first < rhs.first;
         });
@@ -220,8 +210,7 @@ private:
             HIPDNN_PLUGIN_LOG_ERROR("ingestor: benchmarking found no usable candidate among "
                                     << _candidates.size() << " kernel(s); defaulting to "
                                     << toString(_candidates.front().kernelId));
-            // Nothing is recorded here: an all-unusable sweep has no ranking, and caching
-            // index 0 would cache a guess.
+            // Nothing is recorded here: an all-unusable sweep has no ranking to cache.
         }
         else
         {
@@ -254,14 +243,8 @@ protected:
     /// untimed ones, or nullopt if the candidate threw or a HIP event call failed -- both
     /// are a loss for this candidate, never a throw out of resolveChosen().
     ///
-    /// Virtual purely as a **test seam**, and it changes no production behaviour: the
-    /// timed path below needs real hipEvents, so on a machine with no device every
-    /// candidate scores unusable and the ranking is always empty. That would leave the
-    /// write-back path -- and the story's central claim, that a sampled ranking survives
-    /// its plan -- green while proving nothing. A test subclass returns deterministic
-    /// times instead, so the ranking, the omission of failed candidates, and the
-    /// all-unusable case are all assertable without hardware. The device path itself is
-    /// proven on gfx942.
+    /// Virtual purely as a **test seam**, with no production behaviour change: the timed
+    /// path needs real hipEvents, so a device-less test cannot exercise it directly.
     virtual std::optional<double> sampleCandidate(size_t index,
                                                   const THandle& handle,
                                                   const hipdnnPluginDeviceBuffer_t* deviceBuffers,
