@@ -98,8 +98,9 @@ public:
     /// One sub-plan plus the kernel it was built for. The ids ride alongside because IPlan
     /// has no kernel accessor and must not grow one: kernelId names the selection log
     /// entry, packId/dispatchId are what a cached ranking is validated against. A
-    /// default-constructed packId never matches a real one, so an uncached candidate
-    /// never resolves against a record.
+    /// default-constructed packId matches no id any in-tree pack declares, so an
+    /// uncached candidate does not resolve against a record. Descriptor loading does
+    /// not reject a nil UUID, so this is a convention rather than an enforced invariant.
     struct Candidate
     {
         DescriptorId kernelId;
