@@ -1,7 +1,7 @@
 # Copyright Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: MIT
 
-# Multi-Arch CI for rocm-libraries
+# Multi-Arch CI for rocm-libraries`n# The workflow is dispatched from this fork for rocFFT AOT cache validation.
 #
 # This workflow replicates TheRock's multi-arch CI pipeline by calling
 # TheRock's reusable workflows directly. It provides sharded, multi-stage
